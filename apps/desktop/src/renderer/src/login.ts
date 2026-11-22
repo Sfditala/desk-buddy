@@ -44,7 +44,7 @@ emailForm.addEventListener('submit', (e) => {
     }
     emailForm.hidden = true;
     codeForm.hidden = false;
-    hint.textContent = `If ${email.value.trim()} has an account, a code is on its way.`;
+    hint.textContent = `If ${email.value.trim()} has an account, a sign-in email is on its way.`;
     code.focus();
   });
 });
@@ -67,7 +67,7 @@ el('back').addEventListener('click', () => {
   codeForm.hidden = true;
   emailForm.hidden = false;
   code.value = '';
-  hint.textContent = 'We’ll email you a 6-digit code.';
+  hint.textContent = 'We’ll email you a sign-in code or link.';
   email.focus();
 });
 

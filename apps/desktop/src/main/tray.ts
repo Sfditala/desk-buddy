@@ -73,6 +73,14 @@ export class AppTray {
         },
       },
       {
+        label: 'Show character only for reminders',
+        type: 'checkbox',
+        checked: s.onlyForReminders,
+        click: (item) => {
+          this.settings.update({ onlyForReminders: item.checked });
+        },
+      },
+      {
         label: 'Character',
         submenu: CHARACTERS.map((c) => ({
           label: c.label,

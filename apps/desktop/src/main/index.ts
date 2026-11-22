@@ -6,6 +6,7 @@ import { loadConfig } from './config';
 import { initLogger, logger as log } from './logger';
 import { PetIpc } from './ipc';
 import { PetController } from './pet/controller';
+import { PetVisibility } from './pet/visibility';
 import { createPetWindow } from './pet/window';
 import { AlertPresenter, type Alert } from './reminders/presenter';
 import { APP_ORIGIN, hardenApp, registerAppScheme, serveRenderer } from './security';
@@ -74,6 +75,21 @@ async function main(): Promise<void> {
   let ipc: PetIpc;
   let pet: PetController;
 
+  const visibility = new PetVisibility(
+    {
+      show: () => {
+        if (win.isDestroyed()) return;
+        win.showInactive();
+        pet.start();
+      },
+      hide: () => {
+        pet.stop();
+        if (!win.isDestroyed()) win.hide();
+      },
+    },
+    { onlyForReminders: settings.get().onlyForReminders },
+  );
+
   const presenter = new AlertPresenter({
     show: (view) => {
       ipc.send('reminder:show', view);
@@ -86,6 +102,7 @@ async function main(): Promise<void> {
     },
     setAlerting: (on) => {
       pet.alerting = on;
+      visibility.setAlerting(on);
     },
     onAction: (alert: Alert, action) => {
       log.info('alert action', { id: alert.id, action });
@@ -103,8 +120,7 @@ async function main(): Promise<void> {
     ipc.on('renderer:ready', () => {
       const s = settings.get();
       ipc.send('pet:init', { character: s.character, muted: s.muted, window: win.getBounds() });
-      win.showInactive();
-      pet.start();
+      visibility.setReady(true);
       // Re-show whatever was on screen before a renderer crash.
       presenter.redisplay();
     });
@@ -126,6 +142,7 @@ async function main(): Promise<void> {
       const now = Date.now();
       crashes.push(now);
       while (crashes.length && now - (crashes[0] ?? now) > CRASH_WINDOW_MS) crashes.shift();
+      visibility.setReady(false);
       pet.dispose();
       ipc.dispose();
       if (!win.isDestroyed()) win.destroy();
@@ -146,6 +163,7 @@ async function main(): Promise<void> {
   settings.onChange((s) => {
     pet.paused = s.paused;
     presenter.setPaused(s.paused);
+    visibility.setOnlyForReminders(s.onlyForReminders);
     ipc.send('app:settings', { character: s.character, muted: s.muted });
   });
   presenter.setPaused(settings.get().paused);
@@ -223,7 +241,9 @@ async function main(): Promise<void> {
     sync?.nudge();
   });
 
+  // Launching the app again (e.g. from the Start menu) says hello even in reminders-only mode.
   app.on('second-instance', () => {
+    visibility.peek();
     if (pet.mode !== 'alert') pet.celebrate();
   });
   // Tray app: closing the window must not quit.

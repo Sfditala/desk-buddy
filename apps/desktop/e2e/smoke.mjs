@@ -5,7 +5,8 @@
 //   xvfb-run -a node e2e/smoke.mjs        (Linux CI / headless)
 //   node e2e/smoke.mjs                    (Windows/macOS)
 import assert from 'node:assert/strict';
-import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron as electron } from 'playwright';
@@ -43,7 +44,10 @@ for (const f of readdirSync(preloadDir, { recursive: true })) {
   );
 }
 
-const args = [root];
+// Fresh profile; the walking checks need the pet on screen all the time.
+const userData = mkdtempSync(join(tmpdir(), 'deskbuddy-smoke-'));
+writeFileSync(join(userData, 'settings.json'), JSON.stringify({ onlyForReminders: false }));
+const args = [root, `--user-data-dir=${userData}`];
 // Root in a container cannot use the Chromium setuid sandbox; never needed on a real desktop.
 if (process.platform === 'linux' && process.getuid?.() === 0) args.unshift('--no-sandbox');
 

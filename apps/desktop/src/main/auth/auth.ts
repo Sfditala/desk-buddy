@@ -3,6 +3,7 @@ import type { Config } from '../config';
 import { fetchWithTimeout } from '../http';
 import { scoped } from '../logger';
 import type { SecureStore } from '../secure-store';
+import { isSixDigitCode, parseSignInLink } from './sign-in-link';
 
 // Untyped schema on purpose: rows are validated with zod at the boundary (see sync/engine.ts).
 type Client = SupabaseClient;
@@ -21,15 +22,18 @@ export function maskEmail(email: string): string {
 
 /**
  * Supabase Auth in the main process. The session (access + refresh token) is persisted only
- * through SecureStore (OS-encrypted). Sign-in is a 6-digit email code for an existing user:
- * `shouldCreateUser: false`, and sign-ups are disabled on the project.
+ * through SecureStore (OS-encrypted). Sign-in is a 6-digit email code, or the sign-in link from the
+ * same email pasted into the app, for an existing user only (`shouldCreateUser: false`, sign-ups
+ * disabled on the project).
  */
 export class AuthManager {
   readonly client: Client;
   private lastCodeAt = 0;
+  private readonly supabaseUrl: string;
   private readonly listeners = new Set<(s: AuthState) => void>();
 
   constructor(cfg: Config, store: SecureStore) {
+    this.supabaseUrl = cfg.supabaseUrl;
     this.client = createClient<unknown>(cfg.supabaseUrl, cfg.supabaseKey, {
       auth: {
         storageKey: AUTH_KEY,
@@ -85,11 +89,21 @@ export class AuthManager {
     return { ok: true };
   }
 
-  async verify(email: string, code: string): Promise<{ ok: boolean; error?: string }> {
-    const { error } = await this.client.auth.verifyOtp({ email, token: code, type: 'email' });
+  /** `secret` is either the 6-digit code or the sign-in link copied from the email. */
+  async verify(email: string, secret: string): Promise<{ ok: boolean; error?: string }> {
+    let result;
+    if (isSixDigitCode(secret)) {
+      result = await this.client.auth.verifyOtp({ email, token: secret.trim(), type: 'email' });
+    } else {
+      const link = parseSignInLink(secret, this.supabaseUrl);
+      if (!link)
+        return { ok: false, error: 'Paste the 6-digit code or the sign-in link from the email.' };
+      result = await this.client.auth.verifyOtp({ token_hash: link.tokenHash, type: link.type });
+    }
+    const { error } = result;
     if (error) {
       log.warn('code verification failed', { status: error.status, code: error.code });
-      return { ok: false, error: 'That code is invalid or expired.' };
+      return { ok: false, error: 'That code or link is invalid, already used, or expired.' };
     }
     return { ok: true };
   }

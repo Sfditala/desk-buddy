@@ -13,22 +13,26 @@
     <main class="card">
       <img class="logo" alt="" />
       <h1>Sign in to Desk Buddy</h1>
-      <p class="hint" id="hint">We’ll email you a 6-digit code.</p>
+      <p class="hint" id="hint">We’ll email you a sign-in code or link.</p>
       <form id="email-form" novalidate>
         <label for="email">Email</label>
         <input id="email" type="email" autocomplete="email" required maxlength="254" />
         <button type="submit">Send code</button>
       </form>
       <form id="code-form" novalidate hidden>
-        <label for="code">6-digit code</label>
+        <label for="code">Code, or the link from the email</label>
         <input
           id="code"
-          inputmode="numeric"
           autocomplete="one-time-code"
-          pattern="\d{6}"
-          maxlength="6"
+          maxlength="2048"
+          spellcheck="false"
+          placeholder="123456 or https://…"
           required
         />
+        <p class="tip">
+          Got a link instead of a code? Right-click it in the email → <b>Copy link address</b> →
+          paste it here. Don’t open it in the browser.
+        </p>
         <button type="submit">Sign in</button>
         <button type="button" class="link" id="back">Use a different email</button>
       </form>

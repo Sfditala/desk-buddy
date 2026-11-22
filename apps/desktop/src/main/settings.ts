@@ -12,6 +12,8 @@ const Settings = z.object({
   character: CharacterId.default('girl'),
   muted: z.boolean().default(false),
   paused: z.boolean().default(false),
+  /** Pet appears only when a reminder fires (default), or stays on screen all the time. */
+  onlyForReminders: z.boolean().default(true),
 });
 export type Settings = z.infer<typeof Settings>;
 

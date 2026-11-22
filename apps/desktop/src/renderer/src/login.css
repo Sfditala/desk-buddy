@@ -63,9 +63,13 @@ input {
   background: #fff;
 }
 #code {
-  letter-spacing: 8px;
-  text-align: center;
   font-variant-numeric: tabular-nums;
+}
+.tip {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--soft);
 }
 button {
   font: inherit;

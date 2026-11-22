@@ -20,7 +20,10 @@ contextBridge.exposeInMainWorld(
       const msg = VerifyMsg.safeParse({ email, code });
       return msg.success
         ? call(LoginChannel.verify, msg.data)
-        : Promise.resolve({ ok: false, error: 'Enter the 6-digit code' });
+        : Promise.resolve({
+            ok: false,
+            error: 'Paste the 6-digit code or the sign-in link from the email',
+          });
     },
   }),
 );

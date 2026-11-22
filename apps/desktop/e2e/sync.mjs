@@ -105,6 +105,16 @@ try {
 
   const pet = await pageWithUrl('index.html');
   await pet.waitForTimeout(2_000); // let Realtime join
+  const petVisible = () =>
+    app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()
+        .find((w) => w.webContents.getURL().endsWith('/index.html'))
+        .isVisible(),
+    );
+
+  await check('default mode: the character is hidden while nothing is due', async () => {
+    assert.equal(await petVisible(), false);
+  });
 
   let firstId;
   await check('bot-created reminder alerts on the desktop at its due time', async () => {
@@ -123,6 +133,7 @@ try {
     assert.ok(lateMs >= -50, `alert fired early by ${-lateMs} ms`);
     assert.ok(lateMs < 3_000, `alert ${lateMs} ms late`);
     assert.equal(await pet.textContent('.bubble__title'), 'ذكّريني أتصل بماما ☎️');
+    assert.equal(await petVisible(), true, 'character should appear for the reminder');
     await pet.waitForTimeout(500);
     await pet.screenshot({ path: join(artifacts, 'sync-2-alert.png'), omitBackground: true });
     return `shown ${lateMs} ms after due time`;
@@ -134,7 +145,13 @@ try {
       const s = psql(
         `select status || ',' || (acknowledged_at is not null) from public.reminders where id='${firstId}'`,
       );
-      if (s === 'done,true') return s;
+      if (s === 'done,true') {
+        // ...and the character leaves the screen after its happy animation.
+        for (let j = 0; j < 60 && (await petVisible()); j++)
+          await new Promise((r) => setTimeout(r, 100));
+        assert.equal(await petVisible(), false, 'character should hide after Done');
+        return `${s}, character hidden again`;
+      }
       await new Promise((r) => setTimeout(r, 200));
     }
     throw new Error('status not updated');
@@ -182,6 +199,38 @@ try {
       }
       throw new Error('login window did not reopen');
     });
+  });
+
+  await check('sign in again by pasting the email link instead of the code', async () => {
+    const login = await pageWithUrl('login.html');
+    await login.fill('#email', email);
+    await login.click('#email-form button[type=submit]');
+    await login.waitForSelector('#code-form:not([hidden])');
+    // A link that does not point at our project is refused before anything is sent.
+    await login.fill(
+      '#code',
+      'https://evil.example/auth/v1/verify?token=aaaaaaaaaaaaaaaaaaaa&type=magiclink',
+    );
+    await login.click('#code-form button[type=submit]');
+    await login.waitForSelector('#error:not([hidden])', { timeout: 5_000 });
+    // The default Supabase email contains a link; the user copies it instead of clicking it.
+    const { data, error } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
+    if (error) throw error;
+    await login.fill('#code', data.properties.action_link);
+    await login.click('#code-form button[type=submit]');
+    await login.waitForSelector('#ok:not([hidden])', { timeout: 10_000 }).catch(async () => {
+      throw new Error(`not signed in; app says: ${await login.textContent('#error')}`);
+    });
+    for (let i = 0; i < 50; i++) {
+      const n = Number(
+        psql(
+          `select count(*) from public.devices where user_id='${userId}' and revoked_at is null`,
+        ),
+      );
+      if (n === 1) return 'new session registered as a device';
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    throw new Error('device not re-registered after link sign-in');
   });
 } finally {
   await app.close().catch(() => undefined);
