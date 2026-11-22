@@ -61,6 +61,7 @@ describe('unauthenticated (anon key only)', () => {
     ['bot_list_reminders', { p_chat_id: 1 }],
     ['fire_due_reminders', {}],
     ['purge_deleted_reminders', {}],
+    ['bot_login_email', { p_chat_id: 1 }],
     ['ack_reminder', { p_id: '00000000-0000-0000-0000-000000000000', p_action: 'done' }],
     ['register_device', { p_name: 'x' }],
     ['revoke_device', { p_device_id: '00000000-0000-0000-0000-000000000000' }],

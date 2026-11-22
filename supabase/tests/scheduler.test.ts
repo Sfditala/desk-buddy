@@ -183,6 +183,15 @@ describe('ack_reminder (desktop Done / Snooze)', () => {
 });
 
 describe('bot RPCs', () => {
+  it('bot_login_email returns the linked account only, for service_role only', async () => {
+    const ok = await service().rpc('bot_login_email', { p_chat_id: chat });
+    expect(ok.data).toEqual([{ email: owner.email }]);
+    const stranger = await service().rpc('bot_login_email', { p_chat_id: 987654321 });
+    expect(stranger.error?.message).toMatch(/chat not allowed/);
+    const asUser = await client.rpc('bot_login_email', { p_chat_id: chat });
+    expect(asUser.error?.code).toBe('42501');
+  });
+
   it('validates times and rules', async () => {
     const past = await service().rpc('bot_create_reminder', {
       p_chat_id: chat,
