@@ -133,7 +133,7 @@ const getLoginEmail = node({
       contentType: 'json',
       specifyBody: 'json',
       jsonBody: expr(
-        "{{ JSON.stringify({ p_chat_id: $('Telegram Trigger').item.json.message.chat.id }) }}",
+        "{{ JSON.stringify({ p_chat_id: $('Telegram Trigger').first().json.message.chat.id }) }}",
       ),
       options: { timeout: 10000 },
     },
@@ -185,7 +185,7 @@ const sendSignInLink = node({
     parameters: {
       resource: 'message',
       operation: 'sendMessage',
-      chatId: expr("{{ $('Telegram Trigger').item.json.message.chat.id }}"),
+      chatId: expr("{{ $('Telegram Trigger').first().json.message.chat.id }}"),
       text: expr(
         "🔑 رابط الدخول لـ Desk Buddy (مرة وحدة، بينتهي بعد ساعة):\n\n{{ String($json.action_link ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}\n\nانسخي الرابط (كليك يمين ← Copy link) والصقيه بالبرنامج. لا تفتحيه بالمتصفح.\nأو استعملي الكود مع إيميلك: <code>{{ $json.email_otp }}</code>\n\nإذا مش إنتِ اللي طلبتيه، تجاهلي هاي الرسالة.",
       ),
@@ -268,7 +268,7 @@ const createReminder = tool({
       contentType: 'json',
       specifyBody: 'json',
       jsonBody: expr(
-        '{{ JSON.stringify(Object.fromEntries(Object.entries({ p_chat_id: $("Telegram Trigger").item.json.message.chat.id, p_title: $fromAI("title", "Short reminder text in the user\'s language, max 200 chars, without the date/time", "string"), p_remind_at: DateTime.fromISO($fromAI("remind_at_local", "When to remind, as LOCAL Asia/Hebron wall-clock time in format YYYY-MM-DDTHH:mm (no offset, no Z)", "string"), { zone: "Asia/Hebron" }).toUTC().toISO(), p_notes: $fromAI("notes", "Optional extra details, or empty string", "string", ""), p_repeat_rule: $fromAI("repeat_rule", "Optional RRULE subset: FREQ=DAILY|WEEKLY|MONTHLY|YEARLY;INTERVAL=n;BYDAY=MO,TU,WE,TH,FR,SA,SU (BYDAY only with WEEKLY). Empty string for a one-off reminder", "string", "") }).filter(([k, v]) => v !== "" && v !== null && v !== undefined))) }}',
+        '{{ JSON.stringify(Object.fromEntries(Object.entries({ p_chat_id: $("Telegram Trigger").first().json.message.chat.id, p_title: $fromAI("title", "Short reminder text in the user\'s language, max 200 chars, without the date/time", "string"), p_remind_at: DateTime.fromISO($fromAI("remind_at_local", "When to remind, as LOCAL Asia/Hebron wall-clock time in format YYYY-MM-DDTHH:mm (no offset, no Z)", "string"), { zone: "Asia/Hebron" }).toUTC().toISO(), p_notes: $fromAI("notes", "Optional extra details, or empty string", "string", ""), p_repeat_rule: $fromAI("repeat_rule", "Optional RRULE subset: FREQ=DAILY|WEEKLY|MONTHLY|YEARLY;INTERVAL=n;BYDAY=MO,TU,WE,TH,FR,SA,SU (BYDAY only with WEEKLY). Empty string for a one-off reminder", "string", "") }).filter(([k, v]) => v !== "" && v !== null && v !== undefined))) }}',
       ),
       options: { timeout: 10000 },
       optimizeResponse: true,
@@ -299,7 +299,7 @@ const listReminders = tool({
       contentType: 'json',
       specifyBody: 'json',
       jsonBody: expr(
-        "{{ ((fromLocal, toLocal, includeDone) => JSON.stringify(Object.fromEntries(Object.entries({ p_chat_id: $('Telegram Trigger').item.json.message.chat.id, p_from: fromLocal ? DateTime.fromISO(fromLocal, { zone: 'Asia/Hebron' }).toUTC().toISO() : '', p_to: toLocal ? DateTime.fromISO(toLocal, { zone: 'Asia/Hebron' }).toUTC().toISO() : '', p_include_done: includeDone, p_limit: 20 }).filter(([k, v]) => v !== '' && v !== null && v !== undefined))))($fromAI('from_local', 'Optional start of range, LOCAL Asia/Hebron YYYY-MM-DDTHH:mm, or empty string', 'string', ''), $fromAI('to_local', 'Optional end of range, LOCAL Asia/Hebron YYYY-MM-DDTHH:mm, or empty string', 'string', ''), $fromAI('include_done', 'true to also include completed reminders', 'boolean', false)) }}",
+        "{{ ((fromLocal, toLocal, includeDone) => JSON.stringify(Object.fromEntries(Object.entries({ p_chat_id: $('Telegram Trigger').first().json.message.chat.id, p_from: fromLocal ? DateTime.fromISO(fromLocal, { zone: 'Asia/Hebron' }).toUTC().toISO() : '', p_to: toLocal ? DateTime.fromISO(toLocal, { zone: 'Asia/Hebron' }).toUTC().toISO() : '', p_include_done: includeDone, p_limit: 20 }).filter(([k, v]) => v !== '' && v !== null && v !== undefined))))($fromAI('from_local', 'Optional start of range, LOCAL Asia/Hebron YYYY-MM-DDTHH:mm, or empty string', 'string', ''), $fromAI('to_local', 'Optional end of range, LOCAL Asia/Hebron YYYY-MM-DDTHH:mm, or empty string', 'string', ''), $fromAI('include_done', 'true to also include completed reminders', 'boolean', false)) }}",
       ),
       options: { timeout: 10000 },
     },
@@ -326,7 +326,7 @@ const updateReminder = tool({
       contentType: 'json',
       specifyBody: 'json',
       jsonBody: expr(
-        "{{ ((id, title, notes, remindLocal, repeatRule, stopRepeating) => JSON.stringify(Object.fromEntries(Object.entries({ p_chat_id: $('Telegram Trigger').item.json.message.chat.id, p_id: id, p_title: title, p_notes: notes, p_remind_at: remindLocal ? DateTime.fromISO(remindLocal, { zone: 'Asia/Hebron' }).toUTC().toISO() : '', p_repeat_rule: repeatRule, p_clear_repeat: stopRepeating }).filter(([k, v]) => v !== '' && v !== null && v !== undefined))))($fromAI('id', 'The reminder id (uuid) from list_reminders', 'string'), $fromAI('title', 'New title, or empty string to keep', 'string', ''), $fromAI('notes', 'New notes, or empty string to keep', 'string', ''), $fromAI('remind_at_local', 'New LOCAL Asia/Hebron time YYYY-MM-DDTHH:mm, or empty string to keep', 'string', ''), $fromAI('repeat_rule', 'New RRULE subset, or empty string to keep', 'string', ''), $fromAI('stop_repeating', 'true to make it a one-off reminder', 'boolean', false)) }}",
+        "{{ ((id, title, notes, remindLocal, repeatRule, stopRepeating) => JSON.stringify(Object.fromEntries(Object.entries({ p_chat_id: $('Telegram Trigger').first().json.message.chat.id, p_id: id, p_title: title, p_notes: notes, p_remind_at: remindLocal ? DateTime.fromISO(remindLocal, { zone: 'Asia/Hebron' }).toUTC().toISO() : '', p_repeat_rule: repeatRule, p_clear_repeat: stopRepeating }).filter(([k, v]) => v !== '' && v !== null && v !== undefined))))($fromAI('id', 'The reminder id (uuid) from list_reminders', 'string'), $fromAI('title', 'New title, or empty string to keep', 'string', ''), $fromAI('notes', 'New notes, or empty string to keep', 'string', ''), $fromAI('remind_at_local', 'New LOCAL Asia/Hebron time YYYY-MM-DDTHH:mm, or empty string to keep', 'string', ''), $fromAI('repeat_rule', 'New RRULE subset, or empty string to keep', 'string', ''), $fromAI('stop_repeating', 'true to make it a one-off reminder', 'boolean', false)) }}",
       ),
       options: { timeout: 10000 },
       optimizeResponse: true,
@@ -357,7 +357,7 @@ const deleteReminder = tool({
       contentType: 'json',
       specifyBody: 'json',
       jsonBody: expr(
-        '{{ JSON.stringify({ p_chat_id: $("Telegram Trigger").item.json.message.chat.id, p_id: $fromAI("id", "The reminder id (uuid) from list_reminders", "string") }) }}',
+        '{{ JSON.stringify({ p_chat_id: $("Telegram Trigger").first().json.message.chat.id, p_id: $fromAI("id", "The reminder id (uuid) from list_reminders", "string") }) }}',
       ),
       options: { timeout: 10000 },
       optimizeResponse: true,
@@ -388,7 +388,7 @@ const snoozeReminder = tool({
       contentType: 'json',
       specifyBody: 'json',
       jsonBody: expr(
-        '{{ JSON.stringify({ p_chat_id: $("Telegram Trigger").item.json.message.chat.id, p_id: $fromAI("id", "The reminder id (uuid) from list_reminders", "string"), p_minutes: Math.round($fromAI("minutes", "Minutes to snooze, 1-1440 (default 10)", "number", 10)) }) }}',
+        '{{ JSON.stringify({ p_chat_id: $("Telegram Trigger").first().json.message.chat.id, p_id: $fromAI("id", "The reminder id (uuid) from list_reminders", "string"), p_minutes: Math.round($fromAI("minutes", "Minutes to snooze, 1-1440 (default 10)", "number", 10)) }) }}',
       ),
       options: { timeout: 10000 },
       optimizeResponse: true,
@@ -415,6 +415,9 @@ const agent = node({
         systemMessage: expr(
           'You are Desk Buddy, a personal reminder assistant for ONE user, talking on Telegram.\n\nNOW: {{ $now.setZone("Asia/Hebron").toFormat("cccc yyyy-MM-dd HH:mm") }} (Asia/Hebron). Tomorrow is {{ $now.setZone("Asia/Hebron").plus({ days: 1 }).toFormat("cccc yyyy-MM-dd") }}.\n\n' +
             'TOOLS (the only things you can do): create_reminder, list_reminders, update_reminder, delete_reminder, snooze_reminder.\n\n' +
+            'TOOL CALLING RULES\n' +
+            '- Call tools ONE AT A TIME. Never request two tool calls in the same step: wait for each result before the next call. To create two reminders, call create_reminder, wait, then call it again.\n' +
+            '- Act only on the NEWEST user message. Reminders mentioned in earlier messages were already handled: never create them again. If the user seems to repeat an existing reminder, call list_reminders first and do not create a duplicate (same title and time).\n\n' +
             'TIME RULES\n' +
             '- Always pass times as LOCAL Asia/Hebron wall-clock "YYYY-MM-DDTHH:mm". Never add an offset or convert to UTC yourself.\n' +
             '- Understand Arabic (incl. Palestinian/Levantine dialect) and English: "بكرة" = tomorrow, "بعد بكرة" = the day after tomorrow, "اليوم" = today, "الخميس الجاي" / "next Thursday" = the next Thursday after today (if today is Thursday, it is 7 days from today), "بعد ساعة" = now + 1 hour, "بعد 10 دقايق" = now + 10 minutes, "الصبح" morning, "الظهر" noon (12:00), "العصر" ~16:00, "المسا" evening, "بالليل" night.\n' +
