@@ -222,6 +222,94 @@ try {
     throw new Error('not snoozed');
   });
 
+  const statusOf = (id) => psql(`select status from public.reminders where id='${id}'`);
+  const waitStatus = async (id, want, ms = 10_000) => {
+    for (let t = 0; t < ms; t += 200) {
+      if (statusOf(id) === want) return true;
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    return false;
+  };
+
+  await check('a second reminder arriving while one is on screen: Done works on both', async () => {
+    const mk = async (title, ms) =>
+      (
+        await admin.rpc('bot_create_reminder', {
+          p_chat_id: chatId,
+          p_title: title,
+          p_remind_at: new Date(Date.now() + ms).toISOString(),
+        })
+      ).data.id;
+    const first = await mk('first of two', 1_500);
+    await pet.waitForFunction(
+      () => document.querySelector('.bubble__title')?.textContent === 'first of two',
+      null,
+      { timeout: 12_000 },
+    );
+    const second = await mk('second of two', 1_500); // arrives while the first is on screen
+    await new Promise((r) => setTimeout(r, 3_000));
+    await realClick(pet, 'button[data-action="done"]');
+    if (!(await waitStatus(first, 'done'))) throw new Error('first Done not applied');
+    await pet.waitForFunction(
+      () => document.querySelector('.bubble__title')?.textContent === 'second of two',
+      null,
+      { timeout: 8_000 },
+    );
+    await new Promise((r) => setTimeout(r, 500));
+    await realClick(pet, 'button[data-action="done"]');
+    if (!(await waitStatus(second, 'done')))
+      throw new Error('second Done not applied (button stopped working)');
+    return 'both done with real clicks';
+  });
+
+  await check(
+    'a reminder arriving right after Done (during the hide animation) is clickable',
+    async () => {
+      const mk = async (title, ms) =>
+        (
+          await admin.rpc('bot_create_reminder', {
+            p_chat_id: chatId,
+            p_title: title,
+            p_remind_at: new Date(Date.now() + ms).toISOString(),
+          })
+        ).data.id;
+      const a = await mk('A', 1_500);
+      await pet.waitForFunction(
+        () => document.querySelector('.bubble__title')?.textContent === 'A',
+        null,
+        { timeout: 12_000 },
+      );
+      await new Promise((r) => setTimeout(r, 500));
+      await realClick(pet, 'button[data-action="done"]');
+      if (!(await waitStatus(a, 'done'))) throw new Error('A not done');
+      const b = await mk('B', 1_000); // lands while the pet is lingering / hiding
+      await pet.waitForFunction(
+        () =>
+          document.querySelector('.bubble__title')?.textContent === 'B' &&
+          !document.getElementById('bubble').hidden,
+        null,
+        { timeout: 12_000 },
+      );
+      await new Promise((r) => setTimeout(r, 800));
+      await realClick(pet, 'button[data-action="done"]');
+      if (!(await waitStatus(b, 'done'))) throw new Error('B Done not applied');
+      // And once more after the pet fully hid and re-appeared.
+      await new Promise((r) => setTimeout(r, 4_000));
+      const c = await mk('C', 1_000);
+      await pet.waitForFunction(
+        () =>
+          document.querySelector('.bubble__title')?.textContent === 'C' &&
+          !document.getElementById('bubble').hidden,
+        null,
+        { timeout: 12_000 },
+      );
+      await new Promise((r) => setTimeout(r, 800));
+      await realClick(pet, 'button[data-action="done"]');
+      if (!(await waitStatus(c, 'done'))) throw new Error('C Done not applied after hide/show');
+      return 'A, B (during linger) and C (after hide/show) all done';
+    },
+  );
+
   await check('deleting from Telegram retracts an alert already on screen', async () => {
     const { data } = await admin.rpc('bot_create_reminder', {
       p_chat_id: chatId,

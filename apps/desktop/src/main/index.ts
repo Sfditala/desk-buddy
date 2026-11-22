@@ -84,8 +84,13 @@ async function main(): Promise<void> {
    */
   const applyMouseMode = (): void => {
     if (win.isDestroyed()) return;
-    if (alerting) win.setIgnoreMouseEvents(false);
+    // Reminders-only mode (default): the window is only visible for a reminder (plus a short
+    // hello/goodbye), so it never needs to be click-through. Not toggling the ignore state at all
+    // avoids a Windows issue where clicks stop registering after repeated toggles.
+    const clickable = alerting || settings.get().onlyForReminders;
+    if (clickable) win.setIgnoreMouseEvents(false);
     else win.setIgnoreMouseEvents(true, { forward: true });
+    log.debug('mouse mode', { clickable });
   };
   const updateTrayAlert = (): void => {
     const a = presenter.showing;
@@ -149,7 +154,9 @@ async function main(): Promise<void> {
     });
     ipc.on('pet:interactive', (on) => {
       // During an alert the window must stay clickable regardless of hover state.
-      if (!alerting) win.setIgnoreMouseEvents(!on, { forward: true });
+      if (!alerting && !settings.get().onlyForReminders) {
+        win.setIgnoreMouseEvents(!on, { forward: true });
+      }
     });
     ipc.on('reminder:action', (msg) => {
       presenter.handleAction(msg);
@@ -188,6 +195,7 @@ async function main(): Promise<void> {
     pet.paused = s.paused;
     presenter.setPaused(s.paused);
     visibility.setOnlyForReminders(s.onlyForReminders);
+    applyMouseMode();
     ipc.send('app:settings', { character: s.character, muted: s.muted });
   });
   presenter.setPaused(settings.get().paused);

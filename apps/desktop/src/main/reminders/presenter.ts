@@ -100,7 +100,7 @@ export class AlertPresenter {
   handleAction(msg: ActionMsg): void {
     const alert = this.current;
     if (alert?.id !== msg.id) {
-      log.warn('action for alert not on screen', { id: msg.id });
+      log.warn('action for alert not on screen', { id: msg.id, showing: alert?.id ?? null });
       return;
     }
     this.clearCurrent();
