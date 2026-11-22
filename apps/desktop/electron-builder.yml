@@ -1,0 +1,57 @@
+# Windows installer + auto-update. See docs/SIGNING.md for code signing and release steps.
+appId: app.deskbuddy.desktop
+productName: Desk Buddy
+copyright: Copyright © 2026 Desk Buddy
+directories:
+  output: release/${version}
+  buildResources: build
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+  - '!**/*.d.ts'
+  - '!node_modules/zod/src/**'
+  - '!node_modules/**/{test,tests,__tests__}/**'
+  - '!node_modules/**/*.{md,markdown}'
+extraResources:
+  - from: resources/
+    to: .
+    filter: ['tray*.png']
+asar: true
+# Security fuses flipped in the packaged binary (cannot be changed at runtime):
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  loadBrowserProcessSpecificV8Snapshot: false
+  grantFileProtocolExtraPrivileges: false
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.png
+  executableName: DeskBuddy
+  # Signing (Azure Trusted Signing) is configured only in the release workflow via --config flags,
+  # so local builds stay unsigned instead of failing. See docs/SIGNING.md.
+  # electron-updater refuses updates whose Authenticode publisher differs from this.
+  verifyUpdateCodeSignature: true
+
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  deleteAppDataOnUninstall: false
+  artifactName: DeskBuddy-Setup-${version}.${ext}
+  shortcutName: Desk Buddy
+
+# Releases are published to a PUBLIC binaries-only repo so the app never needs a GitHub token
+# to update (an embedded token for a private repo would be a leaked secret).
+publish:
+  provider: github
+  owner: ${env.RELEASES_OWNER}
+  repo: desk-buddy-releases
+  releaseType: release

@@ -6,7 +6,15 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/out/**', '**/release/**', '**/coverage/**'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/out/**',
+      '**/release/**',
+      '**/coverage/**',
+      // n8n Workflow SDK DSL, validated by n8n's own validate_workflow, not tsc.
+      'n8n/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
