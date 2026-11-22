@@ -94,6 +94,112 @@ const isUsableText = ifElse({
   },
 });
 
+const isLoginCommand = ifElse({
+  version: 2.2,
+  config: {
+    name: 'Login Command?',
+    parameters: {
+      conditions: {
+        options: { caseSensitive: true, leftValue: '', typeValidation: 'loose' },
+        combinator: 'and',
+        conditions: [
+          {
+            leftValue: expr(
+              "{{ /^\\s*(\\/login|\\/signin|تسجيل دخول|دخول)\\s*$/i.test($json.message?.text ?? '') }}",
+            ),
+            operator: { type: 'boolean', operation: 'true', singleValue: true },
+            rightValue: '',
+          },
+        ],
+      },
+    },
+  },
+});
+
+const getLoginEmail = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.5,
+  config: {
+    name: 'Get Login Email',
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 2000,
+    parameters: {
+      method: 'POST',
+      url: SUPABASE + '/bot_login_email',
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'supabaseApi',
+      sendBody: true,
+      contentType: 'json',
+      specifyBody: 'json',
+      jsonBody: expr(
+        "{{ JSON.stringify({ p_chat_id: $('Telegram Trigger').item.json.message.chat.id }) }}",
+      ),
+      options: { timeout: 10000 },
+    },
+    credentials: { supabaseApi: newCredential('Desk Buddy Supabase (prod, service role)') },
+    output: [{ email: 'owner@example.com' }],
+  },
+});
+
+const createSignInLink = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.5,
+  config: {
+    name: 'Create Sign-in Link',
+    retryOnFail: true,
+    maxTries: 2,
+    waitBetweenTries: 2000,
+    parameters: {
+      method: 'POST',
+      url: 'https://tmtwdxlmrkjihyoyywuj.supabase.co/auth/v1/admin/generate_link',
+      authentication: 'predefinedCredentialType',
+      nodeCredentialType: 'supabaseApi',
+      sendBody: true,
+      contentType: 'json',
+      specifyBody: 'json',
+      jsonBody: expr(
+        "{{ JSON.stringify({ type: 'magiclink', email: $json.email ?? $json.data }) }}",
+      ),
+      options: { timeout: 10000 },
+    },
+    credentials: { supabaseApi: newCredential('Desk Buddy Supabase (prod, service role)') },
+    output: [
+      {
+        action_link:
+          'https://tmtwdxlmrkjihyoyywuj.supabase.co/auth/v1/verify?token=x&type=magiclink',
+        email_otp: '123456',
+      },
+    ],
+  },
+});
+
+const sendSignInLink = node({
+  type: 'n8n-nodes-base.telegram',
+  version: 1.2,
+  config: {
+    name: 'Send Sign-in Link',
+    retryOnFail: true,
+    maxTries: 3,
+    waitBetweenTries: 3000,
+    parameters: {
+      resource: 'message',
+      operation: 'sendMessage',
+      chatId: expr("{{ $('Telegram Trigger').item.json.message.chat.id }}"),
+      text: expr(
+        "🔑 رابط الدخول لـ Desk Buddy (مرة وحدة، بينتهي بعد ساعة):\n\n{{ String($json.action_link ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}\n\nانسخي الرابط (كليك يمين ← Copy link) والصقيه بالبرنامج. لا تفتحيه بالمتصفح.\nأو استعملي الكود مع إيميلك: <code>{{ $json.email_otp }}</code>\n\nإذا مش إنتِ اللي طلبتيه، تجاهلي هاي الرسالة.",
+      ),
+      additionalFields: {
+        appendAttribution: false,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+      },
+    },
+    credentials: { telegramApi: newCredential('Desk Buddy Telegram (prod)') },
+    output: [{ ok: true }],
+  },
+});
+
 const rejectInput = node({
   type: 'n8n-nodes-base.telegram',
   version: 1.2,
@@ -413,7 +519,15 @@ export default workflow('desk-buddy-agent-prod', 'Desk Buddy · Telegram Agent (
   .add(telegramIn)
   .to(
     isOwnerChat
-      .onTrue(isUsableText.onTrue(agent.to(reply)).onFalse(rejectInput))
+      .onTrue(
+        isUsableText
+          .onTrue(
+            isLoginCommand
+              .onTrue(getLoginEmail.to(createSignInLink).to(sendSignInLink))
+              .onFalse(agent.to(reply)),
+          )
+          .onFalse(rejectInput),
+      )
       .onFalse(ignoreStranger),
   )
   .add(agent.onError(apologize.to(failRun)))

@@ -24,7 +24,7 @@ export class LoginWindow {
     }
     const win = new BrowserWindow({
       width: 400,
-      height: 540,
+      height: 600,
       resizable: false,
       maximizable: false,
       minimizable: false,

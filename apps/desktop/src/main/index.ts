@@ -223,10 +223,18 @@ async function main(): Promise<void> {
       },
     });
     void sync.start().then(async () => {
-      if (!(await auth.current()).signedIn) login?.open();
-      // Signed out later (device revoked, refresh token expired): ask to sign in again.
+      let signedIn = (await auth.current()).signedIn;
+      if (!signedIn) login?.open();
       auth.onChange((state) => {
+        // Signed out later (device revoked, refresh token expired): ask to sign in again.
         if (!state.signedIn) login?.open();
+        // Just signed in: the buddy pops up to say hi, so the user knows it worked even in
+        // reminders-only mode. (Token refreshes keep signedIn=true and do not trigger this.)
+        if (state.signedIn && !signedIn) {
+          visibility.peek();
+          pet.celebrate();
+        }
+        signedIn = state.signedIn;
       });
     });
   } else {

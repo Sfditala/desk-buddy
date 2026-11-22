@@ -9,7 +9,8 @@ export const Email = z.email().max(254);
 export const RequestCodeMsg = z.object({ email: Email });
 /** `code` is the 6-digit code, or the sign-in link from the email (validated again in main). */
 export const VerifyMsg = z.object({
-  email: Email,
+  /** Required for the 6-digit code; not needed for a sign-in link. */
+  email: z.union([Email, z.literal('')]),
   code: z
     .string()
     .trim()

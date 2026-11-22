@@ -10,6 +10,7 @@ function el(id: string): HTMLElement {
 
 const emailForm = el('email-form') as HTMLFormElement;
 const codeForm = el('code-form') as HTMLFormElement;
+const emailAlt = el('email-alt') as HTMLDetailsElement;
 const email = el('email') as HTMLInputElement;
 const code = el('code') as HTMLInputElement;
 const error = el('error');
@@ -42,9 +43,7 @@ emailForm.addEventListener('submit', (e) => {
       showError(res.error);
       return;
     }
-    emailForm.hidden = true;
-    codeForm.hidden = false;
-    hint.textContent = `If ${email.value.trim()} has an account, a sign-in email is on its way.`;
+    hint.textContent = `If ${email.value.trim()} has an account, a sign-in email is on its way. Paste the code or link above.`;
     code.focus();
   });
 });
@@ -52,23 +51,23 @@ emailForm.addEventListener('submit', (e) => {
 codeForm.addEventListener('submit', (e) => {
   e.preventDefault();
   showError();
+  const value = code.value.trim();
+  if (/^\d{6}$/.test(value) && !email.value.trim()) {
+    emailAlt.open = true;
+    email.focus();
+    showError('A 6-digit code also needs your email (under “Use email instead”).');
+    return;
+  }
   void busy(codeForm, async () => {
-    const res = await api.verify(email.value.trim(), code.value.trim());
+    const res = await api.verify(email.value.trim(), value);
     if (!res.ok) {
       showError(res.error);
       return;
     }
     codeForm.hidden = true;
+    emailAlt.hidden = true;
     ok.hidden = false;
   });
 });
 
-el('back').addEventListener('click', () => {
-  codeForm.hidden = true;
-  emailForm.hidden = false;
-  code.value = '';
-  hint.textContent = 'We’ll email you a sign-in code or link.';
-  email.focus();
-});
-
-email.focus();
+code.focus();

@@ -111,3 +111,23 @@ button:focus-visible {
   font-weight: 600;
   text-align: center;
 }
+
+.steps {
+  margin: 0 0 4px;
+  padding-inline-start: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+details {
+  font-size: 14px;
+}
+summary {
+  cursor: pointer;
+  color: var(--soft);
+  margin: 4px 0 8px;
+}
+button.secondary {
+  background: #fff;
+  color: var(--ink);
+}

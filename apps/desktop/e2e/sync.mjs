@@ -78,9 +78,12 @@ const pageWithUrl = async (part) => {
 try {
   await check('login window opens when signed out; email-code sign-in works', async () => {
     const login = await pageWithUrl('login.html');
+    // The paste field is visible immediately (Telegram /login flow); email is the fallback.
+    await login.waitForSelector('#code:visible');
+    await login.screenshot({ path: join(artifacts, 'sync-0-login-start.png') });
+    await login.click('#email-alt summary');
     await login.fill('#email', email);
     await login.click('#email-form button[type=submit]');
-    await login.waitForSelector('#code-form:not([hidden])');
     // In production the code arrives by email; locally we mint one with the admin API.
     const { data, error } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
     if (error) throw error;
@@ -111,6 +114,18 @@ try {
         .find((w) => w.webContents.getURL().endsWith('/index.html'))
         .isVisible(),
     );
+
+  await check('after sign-in the character pops up to say hi, then hides', async () => {
+    let seen = false;
+    for (let i = 0; i < 30 && !seen; i++) {
+      seen = await petVisible();
+      if (!seen) await new Promise((r) => setTimeout(r, 100));
+    }
+    assert.ok(seen, 'character did not appear after sign-in');
+    for (let i = 0; i < 150 && (await petVisible()); i++)
+      await new Promise((r) => setTimeout(r, 100));
+    assert.equal(await petVisible(), false, 'character should hide again');
+  });
 
   await check('default mode: the character is hidden while nothing is due', async () => {
     assert.equal(await petVisible(), false);
@@ -201,11 +216,9 @@ try {
     });
   });
 
-  await check('sign in again by pasting the email link instead of the code', async () => {
+  await check('sign in again by only pasting a link (Telegram /login flow, no email)', async () => {
     const login = await pageWithUrl('login.html');
-    await login.fill('#email', email);
-    await login.click('#email-form button[type=submit]');
-    await login.waitForSelector('#code-form:not([hidden])');
+    await login.waitForSelector('#code:visible');
     // A link that does not point at our project is refused before anything is sent.
     await login.fill(
       '#code',
@@ -213,7 +226,7 @@ try {
     );
     await login.click('#code-form button[type=submit]');
     await login.waitForSelector('#error:not([hidden])', { timeout: 5_000 });
-    // The default Supabase email contains a link; the user copies it instead of clicking it.
+    // The bot's /login (and Supabase's default email) gives a link; it is pasted, never opened.
     const { data, error } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
     if (error) throw error;
     await login.fill('#code', data.properties.action_link);

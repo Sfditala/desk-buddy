@@ -13,31 +13,36 @@
     <main class="card">
       <img class="logo" alt="" />
       <h1>Sign in to Desk Buddy</h1>
-      <p class="hint" id="hint">We’ll email you a sign-in code or link.</p>
-      <form id="email-form" novalidate>
-        <label for="email">Email</label>
-        <input id="email" type="email" autocomplete="email" required maxlength="254" />
-        <button type="submit">Send code</button>
-      </form>
-      <form id="code-form" novalidate hidden>
-        <label for="code">Code, or the link from the email</label>
+      <ol class="steps">
+        <li>In Telegram, send <b>/login</b> to your Desk Buddy bot.</li>
+        <li>Copy the link it replies with (right-click → <b>Copy</b>).</li>
+        <li>Paste it below and press <b>Sign in</b>.</li>
+      </ol>
+      <form id="code-form" novalidate>
+        <label for="code">Sign-in link (or 6-digit code)</label>
         <input
           id="code"
           autocomplete="one-time-code"
           maxlength="2048"
           spellcheck="false"
-          placeholder="123456 or https://…"
+          placeholder="https://… or 123456"
           required
         />
-        <p class="tip">
-          Got a link instead of a code? Right-click it in the email → <b>Copy link address</b> →
-          paste it here. Don’t open it in the browser.
-        </p>
         <button type="submit">Sign in</button>
-        <button type="button" class="link" id="back">Use a different email</button>
       </form>
+      <details id="email-alt">
+        <summary>Use email instead</summary>
+        <form id="email-form" novalidate>
+          <label for="email">Email</label>
+          <input id="email" type="email" autocomplete="email" maxlength="254" />
+          <button type="submit" class="secondary">Email me a code</button>
+          <p class="tip" id="hint">
+            Email is limited to a few messages per hour. Paste the code (or the link) above.
+          </p>
+        </form>
+      </details>
       <p class="error" id="error" role="alert" hidden></p>
-      <p class="ok" id="ok" hidden>Signed in ✓</p>
+      <p class="ok" id="ok" hidden>Signed in ✓ Your buddy will say hi in a second.</p>
     </main>
     <script type="module" src="./src/login.ts"></script>
   </body>

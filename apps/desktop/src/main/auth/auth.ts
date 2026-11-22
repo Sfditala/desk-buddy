@@ -93,6 +93,7 @@ export class AuthManager {
   async verify(email: string, secret: string): Promise<{ ok: boolean; error?: string }> {
     let result;
     if (isSixDigitCode(secret)) {
+      if (!email) return { ok: false, error: 'A 6-digit code also needs your email.' };
       result = await this.client.auth.verifyOtp({ email, token: secret.trim(), type: 'email' });
     } else {
       const link = parseSignInLink(secret, this.supabaseUrl);

@@ -60,3 +60,21 @@ Last updated: 2026-11-22.
 | Monitoring / alerts                                | ✅ n8n · ⏳ Vercel | n8n error workflow; Supabase logs/advisors; desktop logs. Vercel not deployed.                                                                                         |
 | RUNBOOK                                            | ✅                 | `RUNBOOK.md`                                                                                                                                                           |
 | Web dashboard                                      | ❌                 | Step 7, after the core flow is verified end to end.                                                                                                                    |
+
+## Sign-in design (updated)
+
+- **Primary: Telegram `/login`.** The owner sends `/login` to the bot (owner chat allowlist). n8n
+  calls `bot_login_email` (service_role only) and the Auth admin API `generate_link` to mint a
+  one-time magic link + code, and sends it to that chat. The user pastes the link into the app,
+  which verifies it in-app with `verifyOtp({ token_hash })`. No email is sent, so the default
+  SMTP limit (2 emails/hour) no longer blocks sign-in.
+- **Fallback: email code/link** (subject to the SMTP limit unless custom SMTP is configured).
+- The app only accepts links whose origin is the configured project and whose path is
+  `/auth/v1/verify` (unit + e2e tested, foreign links refused). Links are single-use and expire.
+- Risk: anyone with access to the owner's Telegram account can obtain a sign-in link. They could
+  already manage reminders through the bot; mitigation is Telegram two-step verification.
+
+## Supabase advisors (latest)
+
+- Security: `auth_leaked_password_protection` (WARN). Accepted: it is a paid-plan feature and the
+  app does not use password sign-in.
