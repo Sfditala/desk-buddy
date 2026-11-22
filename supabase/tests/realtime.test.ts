@@ -62,7 +62,8 @@ afterAll(async () => {
   await Promise.all(clients.map((c) => c.removeAllChannels()));
 });
 
-describe('Realtime delivery (Telegram → DB → desktop)', () => {
+// Realtime can need a few seconds after `supabase db reset`; allow retries in CI.
+describe('Realtime delivery (Telegram → DB → desktop)', { retry: 2 }, () => {
   it('owner device receives the bot insert and the scheduler fire; others receive nothing', async () => {
     const ownerDev = await device(owner);
     const otherDev = await device(other);
