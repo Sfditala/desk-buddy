@@ -87,6 +87,8 @@ const notifyPhone = node({
   version: 1.2,
   config: {
     name: 'Send Backup Reminder to Phone',
+    // Disabled by the owner: reminders are shown on the desktop only.
+    disabled: true,
     retryOnFail: true,
     maxTries: 3,
     waitBetweenTries: 3000,
