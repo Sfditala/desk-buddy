@@ -54,14 +54,25 @@ const app = await electron.launch({
 });
 
 try {
-  const page = await app.firstWindow();
+  // A build with a backend configured also opens the sign-in window; always target the pet window.
+  const pageFor = async (suffix) => {
+    for (let i = 0; i < 200; i++) {
+      const w = app.windows().find((x) => x.url().endsWith(suffix));
+      if (w) return w;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    throw new Error(`no window ${suffix}`);
+  };
+  const page = await pageFor('/index.html');
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1500);
   await page.screenshot({ path: join(artifacts, '1-idle.png'), omitBackground: true });
 
   await check('window: hardened webPreferences', async () => {
     const prefs = await app.evaluate(({ BrowserWindow }) => {
-      const w = BrowserWindow.getAllWindows()[0];
+      const w = BrowserWindow.getAllWindows().find((w) =>
+        w.webContents.getURL().endsWith('/index.html'),
+      );
       const p = w.webContents.getLastWebPreferences();
       return {
         contextIsolation: p.contextIsolation,
@@ -84,7 +95,9 @@ try {
 
   await check('window: transparent overlay, always on top, never takes focus', async () => {
     const w = await app.evaluate(({ BrowserWindow }) => {
-      const win = BrowserWindow.getAllWindows()[0];
+      const win = BrowserWindow.getAllWindows().find((w) =>
+        w.webContents.getURL().endsWith('/index.html'),
+      );
       return { top: win.isAlwaysOnTop(), focusable: win.isFocusable(), taskbar: win.isVisible() };
     });
     assert.equal(w.top, true);
@@ -182,7 +195,12 @@ try {
 
   await check('pet: walks (window moves) over time', async () => {
     const pos = () =>
-      app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds().x);
+      app.evaluate(
+        ({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows()
+            .find((w) => w.webContents.getURL().endsWith('/index.html'))
+            .getBounds().x,
+      );
     const seen = new Set([await pos()]);
     for (let i = 0; i < 60 && seen.size < 2; i++) {
       await page.waitForTimeout(1000);
@@ -193,19 +211,26 @@ try {
 
   await check('renderer crash is recovered', async () => {
     await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].webContents.forcefullyCrashRenderer(),
+      BrowserWindow.getAllWindows()
+        .find((w) => w.webContents.getURL().endsWith('/index.html'))
+        .webContents.forcefullyCrashRenderer(),
     );
     await new Promise((r) => setTimeout(r, 3000));
     const n = await app.evaluate(
       ({ BrowserWindow }) =>
-        BrowserWindow.getAllWindows().filter((w) => !w.isDestroyed() && !w.webContents.isCrashed())
-          .length,
+        BrowserWindow.getAllWindows().filter(
+          (w) =>
+            !w.isDestroyed() &&
+            !w.webContents.isCrashed() &&
+            w.webContents.getURL().endsWith('/index.html'),
+        ).length,
     );
     assert.equal(n, 1);
   });
   await check('page: cannot navigate away or open windows', async () => {
     // The crash test above replaced the window; use the recreated page.
-    const fresh = app.windows().at(-1);
+    const before = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length);
+    const fresh = await pageFor('/index.html');
     await fresh.waitForLoadState('domcontentloaded');
     await fresh.evaluate(() => {
       window.open('https://evil.example', '_blank');
@@ -214,9 +239,13 @@ try {
     await fresh.waitForTimeout(500);
     const r = await app.evaluate(({ BrowserWindow }) => ({
       count: BrowserWindow.getAllWindows().length,
-      url: BrowserWindow.getAllWindows()[0].webContents.getURL(),
+      urls: BrowserWindow.getAllWindows().map((w) => w.webContents.getURL()),
     }));
-    assert.deepEqual(r, { count: 1, url: 'app://renderer/index.html' });
+    assert.equal(r.count, before, 'a new window was opened');
+    assert.ok(
+      r.urls.every((u) => u.startsWith('app://renderer/')),
+      `navigated away: ${r.urls.join(', ')}`,
+    );
   });
 } finally {
   await app.close().catch(() => undefined);
