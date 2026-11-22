@@ -1,5 +1,12 @@
 # Code signing and releases (Windows)
 
+**Signing is optional.** Without it the Release workflow publishes an unsigned installer: Windows
+SmartScreen shows "Windows protected your PC" on first install (More info → Run anyway), and
+auto-update still works, verifying each download against the sha512 in `latest.yml` over HTTPS.
+What you lose is publisher verification of updates (an attacker who could publish to the releases
+repo could ship a malicious update). Accepted risk for a single-user app; enable signing below to
+close it.
+
 Unsigned installers trigger SmartScreen warnings, and electron-updater only installs an update
 whose Authenticode publisher matches the running app (`verifyUpdateCodeSignature: true`).
 

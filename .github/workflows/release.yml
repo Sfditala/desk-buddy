@@ -45,9 +45,12 @@ jobs:
       - run: npm run lint && npm run typecheck && npm test
       - run: npm audit --omit=dev --audit-level=low
 
-      - name: Build, sign (Azure Trusted Signing) and publish
+      # Signing is optional: when the AZURE_SIGNING_ACCOUNT variable is not set the release is
+      # published unsigned (SmartScreen warns on first install; updates still verify sha512).
+      - name: Build, sign if configured, and publish
         working-directory: apps/desktop
         env:
+          SIGNING_ENABLED: ${{ vars.AZURE_SIGNING_ACCOUNT != '' }}
           # Public by design (RLS-bound publishable key), injected at build time.
           MAIN_VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           MAIN_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
@@ -61,13 +64,19 @@ jobs:
         shell: bash
         run: |
           npx electron-vite build
-          npx electron-builder --win --x64 --publish always \
-            --config.win.azureSignOptions.publisherName="${{ vars.WIN_PUBLISHER_NAME }}" \
-            --config.win.azureSignOptions.endpoint="${{ vars.AZURE_SIGNING_ENDPOINT }}" \
-            --config.win.azureSignOptions.certificateProfileName="${{ vars.AZURE_CERT_PROFILE }}" \
-            --config.win.azureSignOptions.codeSigningAccountName="${{ vars.AZURE_SIGNING_ACCOUNT }}"
+          if [ "$SIGNING_ENABLED" = "true" ]; then
+            npx electron-builder --win --x64 --publish always \
+              --config.win.azureSignOptions.publisherName="${{ vars.WIN_PUBLISHER_NAME }}" \
+              --config.win.azureSignOptions.endpoint="${{ vars.AZURE_SIGNING_ENDPOINT }}" \
+              --config.win.azureSignOptions.certificateProfileName="${{ vars.AZURE_CERT_PROFILE }}" \
+              --config.win.azureSignOptions.codeSigningAccountName="${{ vars.AZURE_SIGNING_ACCOUNT }}"
+          else
+            echo "::warning::Publishing an UNSIGNED installer (no Azure Trusted Signing configured)."
+            npx electron-builder --win --x64 --publish always
+          fi
 
       - name: Verify Authenticode signature
+        if: ${{ vars.AZURE_SIGNING_ACCOUNT != '' }}
         shell: pwsh
         run: |
           $exe = Get-ChildItem apps/desktop/release/*/DeskBuddy-Setup-*.exe | Select-Object -First 1
