@@ -1,0 +1,35 @@
+{
+  "name": "@desk-buddy/desktop",
+  "productName": "Desk Buddy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A desktop pet that reminds you of what you planned.",
+  "author": "Desk Buddy",
+  "type": "module",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc -p tsconfig.json && tsc -p src/renderer/tsconfig.json",
+    "test": "vitest run",
+    "dist:win": "electron-vite build && electron-builder --win --publish never",
+    "release:win": "electron-vite build && electron-builder --win --publish always",
+    "e2e": "node e2e/smoke.mjs"
+  },
+  "dependencies": {
+    "@desk-buddy/core": "0.1.0",
+    "@supabase/supabase-js": "2.119.2",
+    "electron-log": "5.4.4",
+    "electron-updater": "6.8.11",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-sans-arabic": "5.3.0",
+    "electron": "45.4.1",
+    "electron-builder": "26.18.0",
+    "electron-vite": "6.0.0",
+    "playwright": "1.63.0",
+    "vite": "8.3.8"
+  }
+}

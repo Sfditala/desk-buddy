@@ -1,0 +1,33 @@
+# deps / build
+node_modules/
+dist/
+out/
+release/
+*.tsbuildinfo
+coverage/
+
+# env & secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+supabase/.temp/
+supabase/.branches/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# logs
+*.log
+npm-debug.log*
+
+# python
+__pycache__/
+e2e/artifacts/

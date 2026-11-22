@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; media-src 'self'; connect-src 'self' ws:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Desk Buddy</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <canvas id="stage" aria-hidden="true"></canvas>
+    <section id="bubble" class="bubble" role="alertdialog" aria-live="assertive" hidden>
+      <div class="bubble__head">
+        <img class="bubble__avatar" alt="" />
+        <div class="bubble__meta">
+          <time class="bubble__when"></time>
+          <span class="bubble__queued" hidden></span>
+        </div>
+      </div>
+      <p class="bubble__title" dir="auto"></p>
+      <p class="bubble__notes" dir="auto" hidden></p>
+      <div class="bubble__actions">
+        <button type="button" class="btn btn--primary" data-action="done">Done ✓</button>
+        <button type="button" class="btn" data-action="snooze">Snooze 10 min</button>
+      </div>
+      <span class="bubble__tail" aria-hidden="true"></span>
+    </section>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

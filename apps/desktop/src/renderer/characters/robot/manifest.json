@@ -1,0 +1,33 @@
+{
+  "id": "robot",
+  "name": "Robo",
+  "pixelated": true,
+  "scale": 0.42,
+  "states": {
+    "idle": {
+      "src": "neutral.png",
+      "blink": "neutral-blink.png"
+    },
+    "walk": {
+      "src": "neutral.png",
+      "blink": "neutral-blink.png",
+      "facing": "none"
+    },
+    "sit": {
+      "src": "content.png"
+    },
+    "sleep": {
+      "src": "content.png"
+    },
+    "alert": {
+      "src": "alert.png"
+    },
+    "happy": {
+      "src": "happy.png"
+    }
+  },
+  "avatar": {
+    "default": "alert.png",
+    "happy": "happy.png"
+  }
+}

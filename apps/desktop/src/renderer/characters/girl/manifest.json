@@ -1,0 +1,34 @@
+{
+  "id": "girl",
+  "name": "Me",
+  "pixelated": false,
+  "scale": 0.5,
+  "states": {
+    "idle": {
+      "src": "idle.png",
+      "blink": "idle-blink.png"
+    },
+    "walk": {
+      "src": "walk.png",
+      "facing": "right"
+    },
+    "sit": {
+      "src": "sit.png"
+    },
+    "sleep": {
+      "src": "sleep.png"
+    },
+    "alert": {
+      "src": "idle.png",
+      "blink": "idle-blink.png"
+    },
+    "happy": {
+      "src": "idle.png",
+      "blink": "idle-blink.png"
+    }
+  },
+  "avatar": {
+    "default": "avatar.png",
+    "happy": "avatar-happy.png"
+  }
+}
