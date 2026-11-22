@@ -114,6 +114,10 @@ window.addEventListener('mousemove', (e) => {
   }
   setInteractive(over);
 });
+// The window is hidden between reminders; forget hover state so the next show starts clean.
+document.addEventListener('visibilitychange', () => {
+  interactive = false;
+});
 document.addEventListener('mouseleave', () => {
   setInteractive(false);
 });

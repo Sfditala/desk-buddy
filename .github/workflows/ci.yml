@@ -83,7 +83,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: sudo apt-get update && sudo apt-get install -y xvfb
+      - run: sudo apt-get update && sudo apt-get install -y xvfb xdotool
       - name: Smoke test (security settings, CSP, IPC, RTL alert, crash recovery)
         working-directory: apps/desktop
         run: npm run build && xvfb-run -a node e2e/smoke.mjs

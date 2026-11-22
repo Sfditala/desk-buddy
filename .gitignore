@@ -32,5 +32,5 @@ npm-debug.log*
 
 # python
 __pycache__/
-e2e/artifacts/
+**/e2e/artifacts/
 release/

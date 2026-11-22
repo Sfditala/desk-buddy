@@ -7,9 +7,13 @@ export interface TrayStatus {
   connection: string;
   updateReady: boolean;
   account: string | null;
+  /** Reminder currently on screen (tray fallback for Done/Snooze). */
+  alert: { title: string } | null;
 }
 
 export interface TrayActions {
+  alertDone(): void;
+  alertSnooze(): void;
   testReminder(): void;
   signIn(): void;
   signOut(): void;
@@ -25,7 +29,12 @@ const CHARACTERS: { id: CharacterId; label: string }[] = [
 
 export class AppTray {
   private readonly tray: Tray;
-  private status: TrayStatus = { connection: 'Not signed in', updateReady: false, account: null };
+  private status: TrayStatus = {
+    connection: 'Not signed in',
+    updateReady: false,
+    account: null,
+    alert: null,
+  };
 
   constructor(
     resourcesDir: string,
@@ -50,12 +59,35 @@ export class AppTray {
     this.tray.destroy();
   }
 
+  private alertItems(): MenuItemConstructorOptions[] {
+    const alert = this.status.alert;
+    if (!alert) return [];
+    const title = alert.title.length > 40 ? `${alert.title.slice(0, 40)}…` : alert.title;
+    return [
+      { label: `⏰ ${title}`, enabled: false },
+      {
+        label: 'Done ✓',
+        click: () => {
+          this.actions.alertDone();
+        },
+      },
+      {
+        label: 'Snooze 10 min',
+        click: () => {
+          this.actions.alertSnooze();
+        },
+      },
+      { type: 'separator' },
+    ];
+  }
+
   private render(): void {
     const s = this.settings.get();
     const atLogin = app.getLoginItemSettings().openAtLogin;
     const template: MenuItemConstructorOptions[] = [
       { label: `Desk Buddy · ${this.status.connection}`, enabled: false },
       { type: 'separator' },
+      ...this.alertItems(),
       {
         label: 'Pause reminders',
         type: 'checkbox',

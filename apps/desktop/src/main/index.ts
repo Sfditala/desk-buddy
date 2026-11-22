@@ -74,12 +74,30 @@ async function main(): Promise<void> {
   let win: BrowserWindow;
   let ipc: PetIpc;
   let pet: PetController;
+  let trayRef: AppTray | null = null;
+  let alerting = false;
+
+  /**
+   * While a reminder is on screen the whole pet window takes clicks, so Done/Snooze always work.
+   * Otherwise it is click-through; hover forwarding (Windows/macOS) re-enables clicks over the
+   * pet itself. Re-applied on every show because Windows can drop forwarding after hide/show.
+   */
+  const applyMouseMode = (): void => {
+    if (win.isDestroyed()) return;
+    if (alerting) win.setIgnoreMouseEvents(false);
+    else win.setIgnoreMouseEvents(true, { forward: true });
+  };
+  const updateTrayAlert = (): void => {
+    const a = presenter.showing;
+    trayRef?.setStatus({ alert: a ? { title: a.title } : null });
+  };
 
   const visibility = new PetVisibility(
     {
       show: () => {
         if (win.isDestroyed()) return;
         win.showInactive();
+        applyMouseMode();
         pet.start();
       },
       hide: () => {
@@ -93,16 +111,21 @@ async function main(): Promise<void> {
   const presenter = new AlertPresenter({
     show: (view) => {
       ipc.send('reminder:show', view);
+      updateTrayAlert();
     },
     hide: (id) => {
       ipc.send('reminder:hide', { id });
+      updateTrayAlert();
     },
     nag: (id) => {
       ipc.send('reminder:nag', { id });
     },
     setAlerting: (on) => {
+      alerting = on;
       pet.alerting = on;
+      applyMouseMode();
       visibility.setAlerting(on);
+      updateTrayAlert();
     },
     onAction: (alert: Alert, action) => {
       log.info('alert action', { id: alert.id, action });
@@ -125,7 +148,8 @@ async function main(): Promise<void> {
       presenter.redisplay();
     });
     ipc.on('pet:interactive', (on) => {
-      win.setIgnoreMouseEvents(!on, { forward: true });
+      // During an alert the window must stay clickable regardless of hover state.
+      if (!alerting) win.setIgnoreMouseEvents(!on, { forward: true });
     });
     ipc.on('reminder:action', (msg) => {
       presenter.handleAction(msg);
@@ -174,6 +198,14 @@ async function main(): Promise<void> {
 
   let testSeq = 0;
   const tray = new AppTray(RESOURCES_DIR, settings, {
+    alertDone: () => {
+      const a = presenter.showing;
+      if (a) presenter.handleAction({ id: a.id, action: 'done' });
+    },
+    alertSnooze: () => {
+      const a = presenter.showing;
+      if (a) presenter.handleAction({ id: a.id, action: 'snooze' });
+    },
     testReminder: () => {
       testSeq += 1;
       const id = `local-test-${testSeq}`;
@@ -203,6 +235,8 @@ async function main(): Promise<void> {
       app.quit();
     },
   });
+  trayRef = tray;
+  updateTrayAlert();
   updater.start();
 
   if (auth) {

@@ -66,6 +66,38 @@ const app = await electron.launch({
   timeout: 30_000,
 });
 
+// Click like a person: move the real OS cursor to the element and press the button (xdotool on
+// X11). Synthetic page clicks bypass the OS click-through logic, which is exactly what must work.
+const hasXdotool = (() => {
+  try {
+    execFileSync('xdotool', ['version'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+})();
+const realClick = async (page, selector) => {
+  if (!hasXdotool) {
+    await page.click(selector);
+    return 'synthetic click (xdotool not installed)';
+  }
+  const rect = await page.evaluate((sel) => {
+    const r = document.querySelector(sel).getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, selector);
+  const win = await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()
+      .find((w) => w.webContents.getURL().endsWith('/index.html'))
+      .getContentBounds(),
+  );
+  const x = String(Math.round(win.x + rect.x));
+  const y = String(Math.round(win.y + rect.y));
+  execFileSync('xdotool', ['mousemove', x, y]);
+  await new Promise((r) => setTimeout(r, 150));
+  execFileSync('xdotool', ['click', '1']);
+  return `real OS click at ${x},${y}`;
+};
+
 const pageWithUrl = async (part) => {
   for (let i = 0; i < 100; i++) {
     const p = app.windows().find((w) => w.url().includes(part));
@@ -155,7 +187,7 @@ try {
   });
 
   await check('Done is written back to Supabase', async () => {
-    await pet.click('button[data-action="done"]');
+    const how = await realClick(pet, 'button[data-action="done"]');
     for (let i = 0; i < 50; i++) {
       const s = psql(
         `select status || ',' || (acknowledged_at is not null) from public.reminders where id='${firstId}'`,
@@ -165,7 +197,7 @@ try {
         for (let j = 0; j < 60 && (await petVisible()); j++)
           await new Promise((r) => setTimeout(r, 100));
         assert.equal(await petVisible(), false, 'character should hide after Done');
-        return `${s}, character hidden again`;
+        return `${s}, character hidden again (${how})`;
       }
       await new Promise((r) => setTimeout(r, 200));
     }
@@ -179,7 +211,7 @@ try {
       p_remind_at: new Date(Date.now() + 2_000).toISOString(),
     });
     await pet.waitForSelector('#bubble:not([hidden])', { timeout: 12_000 });
-    await pet.click('button[data-action="snooze"]');
+    await realClick(pet, 'button[data-action="snooze"]');
     for (let i = 0; i < 50; i++) {
       const s = psql(
         `select status || ',' || round(extract(epoch from snooze_until - now()) / 60) from public.reminders where id='${data.id}'`,
