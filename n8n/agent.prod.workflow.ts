@@ -241,7 +241,7 @@ const chatMemory = memory({
     name: 'Short-term Memory',
     parameters: {
       sessionIdType: 'customKey',
-      sessionKey: expr('desk-buddy-{{ $("Telegram Trigger").item.json.message.chat.id }}'),
+      sessionKey: expr('desk-buddy-{{ $("Telegram Trigger").first().json.message.chat.id }}'),
       contextWindowLength: 8,
     },
   },
@@ -453,7 +453,7 @@ const reply = node({
     parameters: {
       resource: 'message',
       operation: 'sendMessage',
-      chatId: expr('{{ $("Telegram Trigger").item.json.message.chat.id }}'),
+      chatId: expr('{{ $("Telegram Trigger").first().json.message.chat.id }}'),
       text: expr(
         '{{ String($json.output ?? "").slice(0, 3500).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") }}',
       ),
@@ -461,7 +461,7 @@ const reply = node({
         appendAttribution: false,
         parse_mode: 'HTML',
         disable_web_page_preview: true,
-        reply_to_message_id: expr('{{ $("Telegram Trigger").item.json.message.message_id }}'),
+        reply_to_message_id: expr('{{ $("Telegram Trigger").first().json.message.message_id }}'),
       },
     },
     credentials: { telegramApi: newCredential('Desk Buddy Telegram (prod)') },
@@ -478,7 +478,7 @@ const apologize = node({
     parameters: {
       resource: 'message',
       operation: 'sendMessage',
-      chatId: expr('{{ $("Telegram Trigger").item.json.message.chat.id }}'),
+      chatId: expr('{{ $("Telegram Trigger").first().json.message.chat.id }}'),
       text: 'صار خلل مؤقت وما قدرت أكمّل 😕 جرّبي كمان دقيقة.\nSomething went wrong, please try again in a minute.',
       additionalFields: { appendAttribution: false },
     },
