@@ -5,7 +5,7 @@
 //   xvfb-run -a node e2e/smoke.mjs        (Linux CI / headless)
 //   node e2e/smoke.mjs                    (Windows/macOS)
 import assert from 'node:assert/strict';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron as electron } from 'playwright';
@@ -23,6 +23,25 @@ const check = async (name, fn) => {
     results.push(['FAIL', name, err.message]);
   }
 };
+
+// Sandboxed preloads may only require('electron'): no chunks, no node_modules.
+const preloadDir = join(root, 'out', 'preload');
+for (const f of readdirSync(preloadDir, { recursive: true })) {
+  const file = join(preloadDir, String(f));
+  if (!file.endsWith('.cjs') && !file.endsWith('.js')) {
+    results.push(['FAIL', `preload: unexpected file ${String(f)}`]);
+    continue;
+  }
+  const requires = [...readFileSync(file, 'utf8').matchAll(/require\(["']([^"']+)["']\)/g)].map(
+    (m) => m[1],
+  );
+  const bad = requires.filter((r) => r !== 'electron');
+  results.push(
+    bad.length
+      ? ['FAIL', `preload ${String(f)} is self-contained`, bad.join(', ')]
+      : ['PASS', `preload ${String(f)} is self-contained`],
+  );
+}
 
 const args = [root];
 // Root in a container cannot use the Chromium setuid sandbox; never needed on a real desktop.

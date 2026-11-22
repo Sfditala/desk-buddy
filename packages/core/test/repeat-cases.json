@@ -2,25 +2,125 @@
   "timeZone": "Asia/Hebron",
   "format": "local wall-clock 'yyyy-MM-dd HH:mm' in timeZone; expected null = series ended",
   "cases": [
-    { "name": "daily, next day", "rule": "FREQ=DAILY", "anchor": "2026-11-20 09:00", "after": "2026-11-22 09:00", "expected": "2026-11-23 09:00" },
-    { "name": "daily, same day before time", "rule": "FREQ=DAILY", "anchor": "2026-11-20 09:00", "after": "2026-11-22 08:59", "expected": "2026-11-22 09:00" },
-    { "name": "daily keeps wall clock across DST end", "rule": "FREQ=DAILY", "anchor": "2026-10-15 09:00", "after": "2026-11-02 10:00", "expected": "2026-11-03 09:00" },
-    { "name": "daily keeps wall clock across DST start", "rule": "FREQ=DAILY", "anchor": "2026-03-01 09:00", "after": "2026-04-10 10:00", "expected": "2026-04-11 09:00" },
-    { "name": "every 2 days skips missed", "rule": "FREQ=DAILY;INTERVAL=2", "anchor": "2026-11-01 20:00", "after": "2026-11-10 21:00", "expected": "2026-11-11 20:00" },
-    { "name": "anchor in future returns anchor", "rule": "FREQ=DAILY", "anchor": "2026-12-01 08:00", "after": "2026-11-22 10:00", "expected": "2026-12-01 08:00" },
-    { "name": "weekly same weekday", "rule": "FREQ=WEEKLY", "anchor": "2026-11-19 18:30", "after": "2026-11-19 18:30", "expected": "2026-11-26 18:30" },
-    { "name": "weekly byday sun,thu", "rule": "FREQ=WEEKLY;BYDAY=SU,TH", "anchor": "2026-11-19 07:00", "after": "2026-11-20 12:00", "expected": "2026-11-22 07:00" },
-    { "name": "weekly byday crosses week", "rule": "FREQ=WEEKLY;BYDAY=MO,WE", "anchor": "2026-11-18 07:00", "after": "2026-11-18 07:00", "expected": "2026-11-23 07:00" },
-    { "name": "biweekly byday", "rule": "FREQ=WEEKLY;INTERVAL=2;BYDAY=TU", "anchor": "2026-11-03 10:00", "after": "2026-11-04 00:00", "expected": "2026-11-17 10:00" },
-    { "name": "monthly on 31st clamps without drift (feb)", "rule": "FREQ=MONTHLY", "anchor": "2026-01-31 12:00", "after": "2026-02-01 00:00", "expected": "2026-02-28 12:00" },
-    { "name": "monthly on 31st returns to 31st", "rule": "FREQ=MONTHLY", "anchor": "2026-01-31 12:00", "after": "2026-03-01 00:00", "expected": "2026-03-31 12:00" },
-    { "name": "yearly leap day clamps", "rule": "FREQ=YEARLY", "anchor": "2028-02-29 09:00", "after": "2028-03-01 00:00", "expected": "2029-02-28 09:00" },
-    { "name": "until inclusive", "rule": "FREQ=DAILY;UNTIL=20261123T070000Z", "anchor": "2026-11-20 09:00", "after": "2026-11-22 09:00", "expected": "2026-11-23 09:00" },
-    { "name": "until ended", "rule": "FREQ=DAILY;UNTIL=20261123T065959Z", "anchor": "2026-11-20 09:00", "after": "2026-11-22 09:00", "expected": null }
+    {
+      "name": "daily, next day",
+      "rule": "FREQ=DAILY",
+      "anchor": "2026-11-20 09:00",
+      "after": "2026-11-22 09:00",
+      "expected": "2026-11-23 09:00"
+    },
+    {
+      "name": "daily, same day before time",
+      "rule": "FREQ=DAILY",
+      "anchor": "2026-11-20 09:00",
+      "after": "2026-11-22 08:59",
+      "expected": "2026-11-22 09:00"
+    },
+    {
+      "name": "daily keeps wall clock across DST end",
+      "rule": "FREQ=DAILY",
+      "anchor": "2026-10-15 09:00",
+      "after": "2026-11-02 10:00",
+      "expected": "2026-11-03 09:00"
+    },
+    {
+      "name": "daily keeps wall clock across DST start",
+      "rule": "FREQ=DAILY",
+      "anchor": "2026-03-01 09:00",
+      "after": "2026-04-10 10:00",
+      "expected": "2026-04-11 09:00"
+    },
+    {
+      "name": "every 2 days skips missed",
+      "rule": "FREQ=DAILY;INTERVAL=2",
+      "anchor": "2026-11-01 20:00",
+      "after": "2026-11-10 21:00",
+      "expected": "2026-11-11 20:00"
+    },
+    {
+      "name": "anchor in future returns anchor",
+      "rule": "FREQ=DAILY",
+      "anchor": "2026-12-01 08:00",
+      "after": "2026-11-22 10:00",
+      "expected": "2026-12-01 08:00"
+    },
+    {
+      "name": "weekly same weekday",
+      "rule": "FREQ=WEEKLY",
+      "anchor": "2026-11-19 18:30",
+      "after": "2026-11-19 18:30",
+      "expected": "2026-11-26 18:30"
+    },
+    {
+      "name": "weekly byday sun,thu",
+      "rule": "FREQ=WEEKLY;BYDAY=SU,TH",
+      "anchor": "2026-11-19 07:00",
+      "after": "2026-11-20 12:00",
+      "expected": "2026-11-22 07:00"
+    },
+    {
+      "name": "weekly byday crosses week",
+      "rule": "FREQ=WEEKLY;BYDAY=MO,WE",
+      "anchor": "2026-11-18 07:00",
+      "after": "2026-11-18 07:00",
+      "expected": "2026-11-23 07:00"
+    },
+    {
+      "name": "biweekly byday",
+      "rule": "FREQ=WEEKLY;INTERVAL=2;BYDAY=TU",
+      "anchor": "2026-11-03 10:00",
+      "after": "2026-11-04 00:00",
+      "expected": "2026-11-17 10:00"
+    },
+    {
+      "name": "monthly on 31st clamps without drift (feb)",
+      "rule": "FREQ=MONTHLY",
+      "anchor": "2026-01-31 12:00",
+      "after": "2026-02-01 00:00",
+      "expected": "2026-02-28 12:00"
+    },
+    {
+      "name": "monthly on 31st returns to 31st",
+      "rule": "FREQ=MONTHLY",
+      "anchor": "2026-01-31 12:00",
+      "after": "2026-03-01 00:00",
+      "expected": "2026-03-31 12:00"
+    },
+    {
+      "name": "yearly leap day clamps",
+      "rule": "FREQ=YEARLY",
+      "anchor": "2028-02-29 09:00",
+      "after": "2028-03-01 00:00",
+      "expected": "2029-02-28 09:00"
+    },
+    {
+      "name": "until inclusive",
+      "rule": "FREQ=DAILY;UNTIL=20261123T070000Z",
+      "anchor": "2026-11-20 09:00",
+      "after": "2026-11-22 09:00",
+      "expected": "2026-11-23 09:00"
+    },
+    {
+      "name": "until ended",
+      "rule": "FREQ=DAILY;UNTIL=20261123T065959Z",
+      "anchor": "2026-11-20 09:00",
+      "after": "2026-11-22 09:00",
+      "expected": null
+    }
   ],
   "invalid": [
-    "", "FREQ=HOURLY", "FREQ=DAILY;INTERVAL=0", "FREQ=DAILY;INTERVAL=367", "FREQ=DAILY;BYDAY=MO",
-    "FREQ=WEEKLY;BYDAY=XX", "FREQ=WEEKLY;BYDAY=MO,MO", "FREQ=DAILY;COUNT=3", "FREQ=DAILY;FREQ=WEEKLY",
-    "FREQ=DAILY;UNTIL=2026-11-23", "FREQ", "FREQ=DAILY;;", "FREQ=DAILY;UNTIL=20261332T000000Z"
+    "",
+    "FREQ=HOURLY",
+    "FREQ=DAILY;INTERVAL=0",
+    "FREQ=DAILY;INTERVAL=367",
+    "FREQ=DAILY;BYDAY=MO",
+    "FREQ=WEEKLY;BYDAY=XX",
+    "FREQ=WEEKLY;BYDAY=MO,MO",
+    "FREQ=DAILY;COUNT=3",
+    "FREQ=DAILY;FREQ=WEEKLY",
+    "FREQ=DAILY;UNTIL=2026-11-23",
+    "FREQ",
+    "FREQ=DAILY;;",
+    "FREQ=DAILY;UNTIL=20261332T000000Z"
   ]
 }

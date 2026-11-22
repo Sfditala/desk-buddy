@@ -1,0 +1,109 @@
+@import '@fontsource/ibm-plex-sans-arabic/400.css';
+@import '@fontsource/ibm-plex-sans-arabic/600.css';
+
+:root {
+  --ink: #1f1a24;
+  --soft: #6b6275;
+  --line: #2a2230;
+  --accent: #b3122f;
+  --paper: #fffdf8;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, sans-serif;
+}
+.card {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.logo {
+  width: 64px;
+  height: 64px;
+  align-self: center;
+}
+h1 {
+  font-size: 20px;
+  margin: 0;
+  text-align: center;
+}
+.hint {
+  margin: 0 0 6px;
+  color: var(--soft);
+  text-align: center;
+  font-size: 14px;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+form[hidden] {
+  display: none;
+}
+label {
+  font-size: 13px;
+  font-weight: 600;
+}
+input {
+  font: inherit;
+  font-size: 16px;
+  padding: 10px 12px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+#code {
+  letter-spacing: 8px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--line);
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+button.link {
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: var(--soft);
+  text-decoration: underline;
+  font-weight: 400;
+}
+input:focus-visible,
+button:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+}
+.error {
+  color: var(--accent);
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
+}
+.ok {
+  color: #15803d;
+  margin: 0;
+  font-weight: 600;
+  text-align: center;
+}

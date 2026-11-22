@@ -1,12 +1,17 @@
 import { app, dialog, powerMonitor, type BrowserWindow } from 'electron';
 import { join } from 'node:path';
+import { AuthManager } from './auth/auth';
+import { LoginWindow } from './auth/login-window';
+import { loadConfig } from './config';
 import { initLogger, logger as log } from './logger';
 import { PetIpc } from './ipc';
 import { PetController } from './pet/controller';
 import { createPetWindow } from './pet/window';
 import { AlertPresenter, type Alert } from './reminders/presenter';
 import { APP_ORIGIN, hardenApp, registerAppScheme, serveRenderer } from './security';
+import { SecureStore } from './secure-store';
 import { SettingsStore } from './settings';
+import { ReminderSync } from './sync';
 import { AppTray } from './tray';
 import { Updater } from './updater';
 
@@ -50,12 +55,19 @@ function isTrustedUrl(url: string): boolean {
 const CRASH_WINDOW_MS = 5 * 60_000;
 const MAX_CRASHES = 5;
 
-function main(): void {
+async function main(): Promise<void> {
   log.info('starting', { version: app.getVersion(), packaged: app.isPackaged });
   hardenApp(DEV_SERVER);
   if (!DEV_SERVER) serveRenderer(join(OUT_DIR, 'renderer'));
 
   const settings = new SettingsStore();
+  const secure = new SecureStore();
+  await secure.init();
+  const config = loadConfig();
+  if (!config) log.warn('no Supabase config in this build: running without sync');
+  const auth = config ? new AuthManager(config, secure) : null;
+  const login = auth ? new LoginWindow(auth, join(OUT_DIR, 'preload'), DEV_SERVER) : null;
+  let sync: ReminderSync | null = null;
   const crashes: number[] = [];
 
   let win: BrowserWindow;
@@ -78,7 +90,7 @@ function main(): void {
     onAction: (alert: Alert, action) => {
       log.info('alert action', { id: alert.id, action });
       if (action === 'done') pet.celebrate();
-      // Step 3 wires this to the sync engine (Supabase + offline outbox).
+      if (!alert.id.startsWith('local-')) sync?.act(alert, action);
     },
   });
 
@@ -158,10 +170,10 @@ function main(): void {
       ]);
     },
     signIn: () => {
-      log.info('sign-in not configured yet');
+      login?.open();
     },
     signOut: () => {
-      log.info('sign-out not configured yet');
+      void auth?.signOut();
     },
     checkForUpdates: () => {
       updater.check();
@@ -175,8 +187,40 @@ function main(): void {
   });
   updater.start();
 
+  if (auth) {
+    sync = new ReminderSync(auth, secure, {
+      due: (alerts) => {
+        presenter.push(alerts);
+      },
+      retract: (ids) => {
+        for (const id of ids) presenter.retract(id);
+      },
+      retractAll: () => {
+        for (const a of [presenter.showing, ...presenter.pending]) {
+          if (a && !a.id.startsWith('local-')) presenter.retract(a.id);
+        }
+      },
+      status: (connection, account) => {
+        tray.setStatus({ connection, account });
+      },
+    });
+    void sync.start().then(async () => {
+      if (!(await auth.current()).signedIn) login?.open();
+      // Signed out later (device revoked, refresh token expired): ask to sign in again.
+      auth.onChange((state) => {
+        if (!state.signedIn) login?.open();
+      });
+    });
+  } else {
+    tray.setStatus({ connection: 'Sync not configured' });
+  }
+
   powerMonitor.on('resume', () => {
     log.info('system resumed');
+    sync?.nudge();
+  });
+  powerMonitor.on('unlock-screen', () => {
+    sync?.nudge();
   });
 
   app.on('second-instance', () => {
@@ -186,6 +230,8 @@ function main(): void {
   app.on('window-all-closed', () => undefined);
   app.on('before-quit', () => {
     presenter.dispose();
+    sync?.stop();
+    void secure.flush();
     pet.stop();
     updater.stop();
     tray.destroy();

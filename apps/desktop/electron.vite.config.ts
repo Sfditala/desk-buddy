@@ -24,11 +24,16 @@ export default defineConfig({
     },
   },
   preload: {
-    // Sandboxed preloads cannot load ESM or node_modules: bundle everything into one CJS file.
+    // Sandboxed preloads cannot load ESM, node_modules or sibling chunks: every entry must be a
+    // single self-contained CJS file.
     build: {
-      externalizeDeps: { exclude: ['zod'] },
+      isolatedEntries: true,
+      externalizeDeps: false,
       rolldownOptions: {
-        input: { index: resolve(import.meta.dirname, 'src/preload/index.ts') },
+        input: {
+          index: resolve(import.meta.dirname, 'src/preload/index.ts'),
+          login: resolve(import.meta.dirname, 'src/preload/login.ts'),
+        },
         external: ['electron'],
         output: { format: 'cjs', entryFileNames: '[name].cjs' },
       },
@@ -40,7 +45,10 @@ export default defineConfig({
     build: {
       assetsInlineLimit: 0,
       rolldownOptions: {
-        input: { index: resolve(import.meta.dirname, 'src/renderer/index.html') },
+        input: {
+          index: resolve(import.meta.dirname, 'src/renderer/index.html'),
+          login: resolve(import.meta.dirname, 'src/renderer/login.html'),
+        },
       },
     },
   },

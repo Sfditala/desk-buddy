@@ -8,7 +8,8 @@
   },
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "supabase/tests"
   ],
   "scripts": {
     "lint": "eslint . --max-warnings=0",
@@ -18,7 +19,10 @@
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "dev": "npm run dev -w @desk-buddy/desktop",
-    "assets": "python3 tools/assets/build_characters.py"
+    "assets": "python3 tools/assets/build_characters.py",
+    "test:db": "npm run test:db -w @desk-buddy/db-tests",
+    "db:start": "supabase start -x studio,imgproxy,storage-api,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit",
+    "db:reset": "supabase db reset --local"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -27,6 +31,7 @@
     "eslint-plugin-security": "4.2.1",
     "globals": "17.14.0",
     "prettier": "3.10.1",
+    "supabase": "3.2.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.73.0",
     "vitest": "5.1.1"

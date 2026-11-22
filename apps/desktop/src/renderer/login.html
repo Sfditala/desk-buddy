@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self' ws:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Sign in · Desk Buddy</title>
+    <link rel="stylesheet" href="./src/login.css" />
+  </head>
+  <body>
+    <main class="card">
+      <img class="logo" alt="" />
+      <h1>Sign in to Desk Buddy</h1>
+      <p class="hint" id="hint">We’ll email you a 6-digit code.</p>
+      <form id="email-form" novalidate>
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" required maxlength="254" />
+        <button type="submit">Send code</button>
+      </form>
+      <form id="code-form" novalidate hidden>
+        <label for="code">6-digit code</label>
+        <input
+          id="code"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          pattern="\d{6}"
+          maxlength="6"
+          required
+        />
+        <button type="submit">Sign in</button>
+        <button type="button" class="link" id="back">Use a different email</button>
+      </form>
+      <p class="error" id="error" role="alert" hidden></p>
+      <p class="ok" id="ok" hidden>Signed in ✓</p>
+    </main>
+    <script type="module" src="./src/login.ts"></script>
+  </body>
+</html>

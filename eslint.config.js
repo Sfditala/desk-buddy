@@ -45,6 +45,18 @@ export default tseslint.config(
     // Playwright `page.evaluate` callbacks run in the browser.
     files: ['**/e2e/**/*.mjs'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: { 'security/detect-non-literal-fs-filename': 'off' },
+  },
+  {
+    // DB integration tests use an untyped client on purpose (they probe raw API behaviour) and
+    // assert on every shape they read.
+    files: ['supabase/tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      'security/detect-non-literal-fs-filename': 'off',
+    },
   },
   {
     // Settings/secure-store paths derive from app.getPath('userData'), never from user input.
