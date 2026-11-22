@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { isSixDigitCode, parseSignInLink } from '../src/main/auth/sign-in-link';
 
 const PROJECT = 'https://abcd1234.supabase.co';
-const TOKEN = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8';
+// Synthetic, obviously-fake token (no entropy), so secret scanners do not flag the test.
+const TOKEN = 'test_token_'.padEnd(40, 'x');
 const link = (over: Partial<{ origin: string; path: string; token: string; type: string }> = {}) =>
   `${over.origin ?? PROJECT}${over.path ?? '/auth/v1/verify'}?token=${over.token ?? TOKEN}&type=${over.type ?? 'magiclink'}&redirect_to=http://localhost:3000`;
 
