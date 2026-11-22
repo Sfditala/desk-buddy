@@ -63,10 +63,13 @@ describe('unauthenticated (anon key only)', () => {
     ['purge_deleted_reminders', {}],
     ['ack_reminder', { p_id: '00000000-0000-0000-0000-000000000000', p_action: 'done' }],
     ['register_device', { p_name: 'x' }],
+    ['revoke_device', { p_device_id: '00000000-0000-0000-0000-000000000000' }],
+    ['next_occurrence', { p_rule: 'FREQ=DAILY', p_anchor: minutes(0), p_after: minutes(0) }],
   ])('cannot call %s', async (fn, args) => {
     const { error } = await anon().rpc(fn, args);
-    expect(error).not.toBeNull();
-    expect(['42501', 'PGRST202']).toContain(error?.code);
+    // Must be a privilege error, not a check inside the function body.
+    expect(error?.code).toBe('42501');
+    expect(error?.message).toMatch(/permission denied/);
   });
 
   it('cannot reach the private schema', async () => {
