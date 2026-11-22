@@ -51,9 +51,7 @@ jobs:
         working-directory: apps/desktop
         env:
           SIGNING_ENABLED: ${{ vars.AZURE_SIGNING_ACCOUNT != '' }}
-          # Public by design (RLS-bound publishable key), injected at build time.
-          MAIN_VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          MAIN_VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          # Supabase URL + publishable key come from apps/desktop/.env.production (public).
           RELEASES_OWNER: ${{ github.repository_owner }}
           # Fine-grained PAT: contents:write on <owner>/desk-buddy-releases only.
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}

@@ -10,6 +10,8 @@ coverage/
 .env
 .env.*
 !.env.example
+# Public production config (publishable key + URL only), reviewed: see the file header.
+!apps/desktop/.env.production
 *.pem
 *.p12
 *.pfx
